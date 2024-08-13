@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 coloredlogs.install(level='INFO', logger=logger)
 todays_date = datetime.now().date()
 
-st.set_page_config(page_title="Stock Dashboard", layout="wide", page_icon="🔻")
-st.title("🔻 Stock Dashboard")
+st.set_page_config(page_title="Stocks Dashboard", layout="wide", page_icon="🔻")
+st.title("🔻 Stocks Dashboard")
 st.caption("A better way to monitor your favourite stocks 📊")
 
 
