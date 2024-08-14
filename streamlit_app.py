@@ -11,11 +11,19 @@ todays_date = datetime.now().date()
 st.set_page_config(page_title="Stocks Dashboard", layout="wide", page_icon="🔻")
 st.title("🔻 Stocks Dashboard")
 st.caption("A better way to monitor your favourite stocks 📊")
+st.logo("assets/TorCrime_logo.png")
 
 
 # --------------constants
 DEFAULT_STOCK_SYMBOLS = ["NVDA", "META", "AMZN", "MSFT", "SHOP", "TSLA", "AAPL"]
 DAYS_BACK = [1, 7, 30,90, 180] # TODO: 365d change doesn't work
+CHANGE_ICONS = {
+    'Big Negative Drop < -10%': '📉',
+    'Small Negative Drop [-1%, 10%]': '🔻',
+    'Neutral Change (-1%, 1%)': '',
+    'Small Positive Rise [1%, 10%]': '🟢',
+    'Big Positive Rise > 10%': '🚀',
+}
 
 # --------------helpers
 @st.cache_data()
@@ -41,6 +49,7 @@ tickers = get_sp500_tickers(todays_date) + ['SHOP', 'AAPL']
 
 start_date = st.sidebar.date_input("Start Date", value=datetime.now() - timedelta(days=370))
 end_date = st.sidebar.date_input("End Date", value=todays_date)
+st.sidebar.caption("Made with ❤️ by [Brydon](https://brydon.streamlit.app/)")
 
 stock_symbols = st.multiselect(
     label="Stocks",
@@ -62,7 +71,7 @@ for days_back in DAYS_BACK:
 # TODO: bring this into the dataframe
 
 df_viz = stock_data['Adj Close'].iloc[[-1]].T
-df_viz.columns = ['Adjusted Close']
+df_viz.columns = ['Adjusted Close Price']
 
 for days_back in DAYS_BACK:
     df_viz[f'pct_change_{days_back}d'] = (pct_changes[days_back].iloc[-1] * 100).astype(float)
@@ -70,16 +79,16 @@ for days_back in DAYS_BACK:
     for val in df_viz[f'pct_change_{days_back}d']:
         if val < 0:
             if val < -10:
-                color_coded.append('📉')
-            elif val < -1:
-                color_coded.append('🔻')
+                color_coded.append(CHANGE_ICONS['Big Negative Drop < -10%'])
+            elif val <= -1:
+                color_coded.append(CHANGE_ICONS['Small Negative Drop [-1%, 10%]'])
             else:
-                color_coded.append('')
+                color_coded.append(CHANGE_ICONS['Neutral Change (-1%, 1%)'])
         else:
             if val > 10:
-                color_coded.append('🚀')
-            elif val > 1:
-                color_coded.append('🟢')
+                color_coded.append(CHANGE_ICONS['Big Positive Rise > 10%'])
+            elif val >= 1:
+                color_coded.append(CHANGE_ICONS['Small Positive Rise [1%, 10%]'])
             else:
                 color_coded.append('')
     df_viz[f'pct_change_{days_back}d'] = [f"{val:.1f}% {emoji}" for val, emoji in zip(df_viz[f'pct_change_{days_back}d'], color_coded)]
@@ -102,10 +111,18 @@ pct_change_col_configs = {
    for days in DAYS_BACK
 }
 
-st.dataframe(
-    df_viz,
-    column_config=pct_change_col_configs
-)
+col1, col2 = st.columns((3,1))
+
+with col1:
+    st.dataframe(
+        df_viz,
+        column_config=pct_change_col_configs,
+        use_container_width=True,
+    )
+with col2:
+    st.caption("**Legend**")
+    for change, emoji in CHANGE_ICONS.items():
+        st.caption(f"{emoji} = {change}")
 
 
 
@@ -127,7 +144,7 @@ col1, col2 = st.columns(2)
 with col1:
     p = px.line(
         stock_data['Adj Close'],
-        title=f"Daily Adjusted Closes",
+        title=f"Daily Adjusted Close Prices",
         labels={"value": "Price", "Date": "Date"},
     )
     # if stock_symbols == DEFAULT_STOCK_SYMBOLS:
